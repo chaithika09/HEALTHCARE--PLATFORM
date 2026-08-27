@@ -209,7 +209,7 @@ export default function SettingsPage() {
 
   const toggleNotif = k => setNotifications(p => ({ ...p, [k]: !p[k] }));
   const Toggle = ({ checked, onChange }) => (
-    <button onClick={onChange} className={`relative w-11 h-6 rounded-full transition-colors ${checked ? "bg-primary-500" : "bg-gray-300"}`}>
+    <button onClick={onChange} className={`relative w-11 h-6 rounded-full transition-colors ${checked ? "bg-primary-500" : "bg-gray-300 dark:bg-slate-700"}`}>
       <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${checked ? "translate-x-5" : "translate-x-0"}`} />
     </button>
   );
@@ -217,19 +217,19 @@ export default function SettingsPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-heading font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-500 text-sm mt-1">Manage your preferences and account settings</p>
+        <h1 className="text-2xl font-heading font-bold text-gray-900 dark:text-white">Settings</h1>
+        <p className="text-gray-500 dark:text-slate-400 text-sm mt-1">Manage your preferences and account settings</p>
       </div>
 
       {/* Appearance */}
-      <div className="card p-5 space-y-4">
-        <h2 className="font-semibold text-gray-900">Appearance</h2>
+      <div className="card p-5 space-y-4 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800">
+        <h2 className="font-semibold text-gray-900 dark:text-white">Appearance</h2>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {darkMode ? <FiMoon size={18} className="text-gray-600" /> : <FiSun size={18} className="text-amber-500" />}
+            {darkMode ? <FiMoon size={18} className="text-primary-400" /> : <FiSun size={18} className="text-amber-500" />}
             <div>
-              <p className="text-sm font-medium text-gray-900">Dark Mode</p>
-              <p className="text-xs text-gray-500">Switch between light and dark theme</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">Dark Mode</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400">Switch between light and dark theme</p>
             </div>
           </div>
           <Toggle checked={darkMode} onChange={toggleDarkMode} />
@@ -237,12 +237,12 @@ export default function SettingsPage() {
       </div>
 
       {/* Language */}
-      <div className="card p-5 space-y-4">
-        <h2 className="font-semibold text-gray-900 flex items-center gap-2"><FiGlobe size={16} /> Language</h2>
+      <div className="card p-5 space-y-4 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800">
+        <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2"><FiGlobe size={16} /> Language</h2>
         <div className="grid grid-cols-3 gap-2">
           {languages.map(lang => (
             <button key={lang.code} onClick={() => { setLanguage(lang.code); toast.success(`Language set to ${lang.label}`); }}
-              className={`py-2.5 px-3 rounded-xl text-sm font-medium border-2 transition-all flex items-center gap-1.5 justify-center ${language === lang.code ? "border-primary-500 bg-primary-50 text-primary-700" : "border-gray-200 text-gray-700 hover:border-gray-300"}`}>
+              className={`py-2.5 px-3 rounded-xl text-sm font-medium border-2 transition-all flex items-center gap-1.5 justify-center ${language === lang.code ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300" : "border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:border-gray-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800"}`}>
               <span>{lang.flag}</span>{lang.label}
             </button>
           ))}
@@ -250,8 +250,8 @@ export default function SettingsPage() {
       </div>
 
       {/* Notifications */}
-      <div className="card p-5 space-y-4">
-        <h2 className="font-semibold text-gray-900 flex items-center gap-2"><FiBell size={16} /> Notifications</h2>
+      <div className="card p-5 space-y-4 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800">
+        <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2"><FiBell size={16} /> Notifications</h2>
         {[
           { key:"appointments", label:"Appointment Reminders", desc:"Upcoming appointment alerts" },
           { key:"reminders",    label:"Medicine Reminders",    desc:"Daily medication reminders" },
@@ -262,8 +262,8 @@ export default function SettingsPage() {
         ].map(item => (
           <div key={item.key} className="flex items-center justify-between py-1">
             <div>
-              <p className="text-sm font-medium text-gray-900">{item.label}</p>
-              <p className="text-xs text-gray-500">{item.desc}</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">{item.label}</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400">{item.desc}</p>
             </div>
             <Toggle checked={notifications[item.key]} onChange={() => { toggleNotif(item.key); toast.success(`${item.label} ${!notifications[item.key] ? "enabled" : "disabled"}`); }} />
           </div>
@@ -271,12 +271,12 @@ export default function SettingsPage() {
       </div>
 
       {/* Security */}
-      <div className="card p-5 space-y-4">
-        <h2 className="font-semibold text-gray-900 flex items-center gap-2"><FiShield size={16} /> Security</h2>
+      <div className="card p-5 space-y-4 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800">
+        <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2"><FiShield size={16} /> Security</h2>
         <div className="flex items-center justify-between py-1">
           <div>
-            <p className="text-sm font-medium text-gray-900">Two-Factor Authentication</p>
-            <p className="text-xs text-gray-500">Add an extra layer of security</p>
+            <p className="text-sm font-medium text-gray-900 dark:text-white">Two-Factor Authentication</p>
+            <p className="text-xs text-gray-500 dark:text-slate-400">Add an extra layer of security</p>
           </div>
           <Toggle checked={twoFA} onChange={() => { setTwoFA(!twoFA); toast.success(`2FA ${!twoFA ? "enabled" : "disabled"}`); }} />
         </div>
@@ -286,10 +286,10 @@ export default function SettingsPage() {
           { label:"Privacy Settings", desc:"Control your data and privacy",        onClick:() => setModal("privacy") },
         ].map(item => (
           <button key={item.label} onClick={item.onClick}
-            className="w-full flex items-center justify-between py-2.5 px-3 hover:bg-gray-50 rounded-xl -mx-0 transition-colors border border-transparent hover:border-gray-100">
+            className="w-full flex items-center justify-between py-2.5 px-3 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-xl transition-colors border border-transparent hover:border-gray-100 dark:hover:border-slate-700">
             <div className="text-left">
-              <p className="text-sm font-medium text-gray-900">{item.label}</p>
-              <p className="text-xs text-gray-500">{item.desc}</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">{item.label}</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400">{item.desc}</p>
             </div>
             <FiChevronRight size={16} className="text-gray-400 flex-shrink-0" />
           </button>

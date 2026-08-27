@@ -3,6 +3,7 @@
     "name": "MedIQ+",
     "slug": "mediq-healthcare",
     "version": "1.0.0",
+    "sdkVersion": "52.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",

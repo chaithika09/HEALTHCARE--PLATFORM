@@ -40,31 +40,50 @@ export default function DoctorProfile() {
   const fetchDoctorProfile = async () => {
     try {
       const res = await doctorAPI.getMyProfile();
+
+      if (!res?.data?.success || !res?.data?.data?.doctor) {
+        throw new Error(res?.data?.message || "Invalid profile data received");
+      }
+
       const data = res.data.data.doctor;
       setDoctor(data);
-      
+
+      const availabilityStrings = {
+        monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], saturday: [], sunday: []
+      };
+
+      if (Array.isArray(data.availability)) {
+        data.availability.forEach(slot => {
+          if (slot && slot.day && availabilityStrings[slot.day]) {
+            availabilityStrings[slot.day].push(slot.startTime);
+          }
+        });
+      }
+
       // Populate form
       setFormData({
         specialty: data.specialty || "",
-        subSpecialties: data.subSpecialties?.join(", ") || "",
-        qualifications: data.qualifications?.join(", ") || "",
+        subSpecialties: Array.isArray(data.subSpecialties) ? data.subSpecialties.join(", ") : "",
+        qualifications: Array.isArray(data.education) ? data.education.map(e => `${e.degree} at ${e.institution}`).join(", ") : "",
         experience: data.experience || "",
         licenseNumber: data.licenseNumber || "",
         bio: data.bio || "",
-        languages: data.languages?.join(", ") || "",
+        languages: Array.isArray(data.languages) ? data.languages.join(", ") : "",
         hospital: data.hospital || "",
         videoFee: data.consultationFee?.video || "",
         inPersonFee: data.consultationFee?.inPerson || "",
-        mondaySlots: data.availability?.monday?.slots?.join(", ") || "",
-        tuesdaySlots: data.availability?.tuesday?.slots?.join(", ") || "",
-        wednesdaySlots: data.availability?.wednesday?.slots?.join(", ") || "",
-        thursdaySlots: data.availability?.thursday?.slots?.join(", ") || "",
-        fridaySlots: data.availability?.friday?.slots?.join(", ") || "",
-        saturdaySlots: data.availability?.saturday?.slots?.join(", ") || "",
-        sundaySlots: data.availability?.sunday?.slots?.join(", ") || "",
+        mondaySlots: availabilityStrings.monday.join(", "),
+        tuesdaySlots: availabilityStrings.tuesday.join(", "),
+        wednesdaySlots: availabilityStrings.wednesday.join(", "),
+        thursdaySlots: availabilityStrings.thursday.join(", "),
+        fridaySlots: availabilityStrings.friday.join(", "),
+        saturdaySlots: availabilityStrings.saturday.join(", "),
+        sundaySlots: availabilityStrings.sunday.join(", "),
       });
     } catch (err) {
-      toast.error("Failed to load profile");
+      const msg = err.response?.data?.message || err.message || "Failed to load profile";
+      toast.error(msg);
+      console.error("Profile load error:", err);
     } finally {
       setLoading(false);
     }
@@ -77,6 +96,24 @@ export default function DoctorProfile() {
   const handleSave = async () => {
     setSaving(true);
     try {
+      const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+      const availabilityArray = [];
+
+      days.forEach(day => {
+        const slotsStr = formData[`${day}Slots`];
+        if (slotsStr) {
+          const slots = slotsStr.split(",").map(s => s.trim()).filter(Boolean);
+          slots.forEach(slot => {
+            availabilityArray.push({
+              day,
+              startTime: slot,
+              endTime: slot, // simplified
+              isAvailable: true
+            });
+          });
+        }
+      });
+
       const updateData = {
         specialty: formData.specialty,
         subSpecialties: formData.subSpecialties.split(",").map(s => s.trim()).filter(Boolean),
@@ -90,15 +127,7 @@ export default function DoctorProfile() {
           video: parseInt(formData.videoFee) || 0,
           inPerson: parseInt(formData.inPersonFee) || 0,
         },
-        availability: {
-          monday: { available: !!formData.mondaySlots, slots: formData.mondaySlots.split(",").map(s => s.trim()).filter(Boolean) },
-          tuesday: { available: !!formData.tuesdaySlots, slots: formData.tuesdaySlots.split(",").map(s => s.trim()).filter(Boolean) },
-          wednesday: { available: !!formData.wednesdaySlots, slots: formData.wednesdaySlots.split(",").map(s => s.trim()).filter(Boolean) },
-          thursday: { available: !!formData.thursdaySlots, slots: formData.thursdaySlots.split(",").map(s => s.trim()).filter(Boolean) },
-          friday: { available: !!formData.fridaySlots, slots: formData.fridaySlots.split(",").map(s => s.trim()).filter(Boolean) },
-          saturday: { available: !!formData.saturdaySlots, slots: formData.saturdaySlots.split(",").map(s => s.trim()).filter(Boolean) },
-          sunday: { available: !!formData.sundaySlots, slots: formData.sundaySlots.split(",").map(s => s.trim()).filter(Boolean) },
-        },
+        availability: availabilityArray
       };
 
       await doctorAPI.updateProfile(updateData);

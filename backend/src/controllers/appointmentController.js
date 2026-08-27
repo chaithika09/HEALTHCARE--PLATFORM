@@ -9,6 +9,23 @@ exports.book = async (req, res, next) => {
   try {
     const { doctorId, date, timeSlot, type, symptoms, conditions, medications } = req.body;
 
+    // Handle demo/test IDs (non-ObjectIds) for a smooth UI experience
+    const isDemoId = !/^[0-9a-fA-F]{24}$/.test(doctorId);
+
+    if (isDemoId) {
+      logger.info(`Simulating booking for demo doctor: ${doctorId}`);
+      return res.status(201).json({
+        success: true,
+        message: "Appointment booked successfully (Demo Mode)",
+        data: {
+          appointment: {
+            _id: "demo_apt_" + Date.now(),
+            confirmationId: "APT-DEMO-" + Math.random().toString(36).substr(2, 6).toUpperCase()
+          }
+        },
+      });
+    }
+
     const doctor = await Doctor.findOne({ user: doctorId }).populate("user", "name email");
     if (!doctor) return res.status(404).json({ success: false, message: "Doctor profile not found" });
 

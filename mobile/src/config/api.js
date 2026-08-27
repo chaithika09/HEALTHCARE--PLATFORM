@@ -1,13 +1,13 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Use production URLs by default if available
-export const API_URL = 'https://mediq-backend-vcus.onrender.com/api/v1';
-export const SOCKET_URL = 'https://mediq-backend-vcus.onrender.com';
+// Current Network Mode (Laptop IP)
+export const API_URL = 'http://172.25.60.252:5000/api/v1';
+export const SOCKET_URL = 'http://172.25.60.252:5000';
 
-// Local development fallback (uncomment to use local backend)
-// export const API_URL = 'http://localhost:5000/api/v1';
-// export const SOCKET_URL = 'http://localhost:5000';
+// Production URLs (uncomment when deploying)
+// export const API_URL = 'https://mediq-backend-vcus.onrender.com/api/v1';
+// export const SOCKET_URL = 'https://mediq-backend-vcus.onrender.com';
 
 const api = axios.create({
   baseURL: API_URL,

@@ -6,10 +6,10 @@ import Logo from "../components/common/Logo";
 import { useAuthStore } from "../store/authStore";
 
 const features = [
-  { icon: FiCpu,       color: "bg-blue-50 text-blue-600",    title: "AI Health Insights",  desc: "Smart diagnostics and personalized health monitoring" },
   { icon: FiVideo,     color: "bg-indigo-50 text-indigo-600",title: "HD Consultations",   desc: "Face-to-face virtual visits with top specialists" },
   { icon: FiFileText,  color: "bg-emerald-50 text-emerald-600", title: "Digital Records", desc: "Your entire medical history, secured in one place" },
   { icon: FiActivity,  color: "bg-rose-50 text-rose-600",    title: "Vital Tracking",      desc: "Real-time tracking of BP, sugar, and heart rate" },
+  { icon: FiShield,    color: "bg-blue-50 text-blue-600",    title: "Secure Access",       desc: "End-to-end encrypted medical data storage" },
 ];
 
 export default function WelcomePage() {

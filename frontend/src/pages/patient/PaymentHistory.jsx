@@ -1,31 +1,44 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { FiDownload, FiSearch, FiCreditCard, FiCheckCircle, FiXCircle, FiClock } from "react-icons/fi";
+import { paymentAPI } from "../../services/api";
 import toast from "react-hot-toast";
-
-const payments = [
-  { id: "PAY-001", description: "Consultation - Dr. Sarah Johnson", date: "2024-06-15", amount: 150, status: "paid",    method: "Visa •••• 4242" },
-  { id: "PAY-002", description: "Lab Test - CBC + Lipid Profile",   date: "2024-06-10", amount: 60,  status: "paid",    method: "Mastercard •••• 5555" },
-  { id: "PAY-003", description: "Consultation - Dr. Emily Davis",   date: "2024-06-01", amount: 120, status: "paid",    method: "PayPal" },
-  { id: "PAY-004", description: "Consultation - Dr. Michael Chen",  date: "2024-05-28", amount: 180, status: "refunded",method: "Visa •••• 4242" },
-  { id: "PAY-005", description: "Lab Test - HbA1c",                 date: "2024-05-15", amount: 30,  status: "paid",    method: "Google Pay" },
-  { id: "PAY-006", description: "Consultation - Dr. James Wilson",  date: "2024-05-10", amount: 100, status: "pending", method: "Visa •••• 4242" },
-];
 
 const statusConfig = {
   paid:     { label: "Paid",     icon: FiCheckCircle, color: "text-green-600 bg-green-100" },
   refunded: { label: "Refunded", icon: FiXCircle,     color: "text-blue-600 bg-blue-100" },
   pending:  { label: "Pending",  icon: FiClock,       color: "text-amber-600 bg-amber-100" },
+  processing: { label: "Processing", icon: FiClock,   color: "text-blue-600 bg-blue-100" },
 };
 
 export default function PaymentHistory() {
+  const [payments, setPayments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("all");
+
+  useEffect(() => {
+    fetchPayments();
+  }, []);
+
+  const fetchPayments = async () => {
+    try {
+      const res = await paymentAPI.getHistory();
+      setPayments(res.data.data.payments || []);
+    } catch (err) {
+      console.error("Failed to fetch payments");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDownloadReceipt = (p) => {
     const text = `
 ============================================================
  SMART HEALTHCARE PORTAL — PAYMENT RECEIPT
 ============================================================
- Transaction ID  : ${p.id}
- Date & Time     : ${p.date}
+ Transaction ID  : ${p.transactionId || p._id}
+ Date & Time     : ${new Date(p.createdAt).toLocaleString()}
  Description     : ${p.description}
  Payment Method  : ${p.method}
  Total Amount    : $${p.amount}.00 USD
@@ -34,30 +47,31 @@ export default function PaymentHistory() {
 
  THANK YOU FOR YOUR PAYMENT.
  For billing queries or support, contact billing@mediq.com.
- SHA256 Verification Code: ${Math.random().toString(36).substring(2, 14).toUpperCase()}
 ============================================================
 `;
     const blob = new Blob([text.trim()], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Receipt_${p.id}.txt`;
+    a.download = `Receipt_${p._id}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast.success(`Downloaded receipt for ${p.id}!`);
+    toast.success("Downloaded receipt!");
   };
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("all");
 
   const filtered = payments.filter((p) => {
-    const matchSearch = p.description.toLowerCase().includes(search.toLowerCase()) || p.id.toLowerCase().includes(search.toLowerCase());
+    const desc = p.description || "";
+    const id = p.transactionId || p._id || "";
+    const matchSearch = desc.toLowerCase().includes(search.toLowerCase()) || id.toLowerCase().includes(search.toLowerCase());
     const matchFilter = filter === "all" || p.status === filter;
     return matchSearch && matchFilter;
   });
 
-  const total = payments.filter((p) => p.status === "paid").reduce((s, p) => s + p.amount, 0);
+  const totalPaid = payments.filter((p) => p.status === "paid").reduce((s, p) => s + p.amount, 0);
+
+  if (loading) return <div className="p-10 text-center text-gray-500">Loading payment history...</div>;
 
   return (
     <div className="space-y-6">

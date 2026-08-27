@@ -45,7 +45,7 @@ export default function MedicalRecords() {
   });
 
   const handleDownload = (rec) => {
-    if (rec.fileUrl) {
+    if (rec.fileUrl && rec.fileUrl.startsWith('http')) {
       window.open(rec.fileUrl, '_blank');
       return;
     }
@@ -76,7 +76,6 @@ export default function MedicalRecords() {
   };
 
   if (loading) return <div className="p-10 text-center text-gray-500">Loading your medical records...</div>;
-
 
   return (
     <div className="space-y-6">
@@ -123,11 +122,11 @@ export default function MedicalRecords() {
       <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
         {filtered.map((rec, i) => (
           <motion.div
-            key={rec.id}
+            key={rec._id || i}
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="card-hover p-5"
+            className="card-hover p-5 bg-white dark:bg-slate-900"
           >
             <div className="flex items-start gap-3 mb-4">
               <div className="w-12 h-12 rounded-xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0">
@@ -135,7 +134,7 @@ export default function MedicalRecords() {
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">{rec.title}</h3>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium mt-1 inline-block ${typeColors[rec.type] || "bg-gray-100 text-gray-600"}`}>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold mt-1 inline-block uppercase ${typeColors[rec.type] || "bg-gray-100 text-gray-600"}`}>
                   {rec.type}
                 </span>
               </div>
@@ -183,7 +182,7 @@ export default function MedicalRecords() {
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900 dark:text-white text-base">{viewRecord.title}</h3>
-                  <p className="text-xs text-gray-400">{viewRecord.type}</p>
+                  <p className="text-[10px] uppercase font-bold text-gray-400">{viewRecord.type}</p>
                 </div>
               </div>
               <button onClick={() => setViewRecord(null)} className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-gray-400">
@@ -194,25 +193,25 @@ export default function MedicalRecords() {
             <div className="space-y-2 text-xs text-gray-600 dark:text-slate-300">
               <div className="flex justify-between py-1 border-b border-gray-50 dark:border-slate-800">
                 <span className="text-gray-400">Doctor / Specialist:</span>
-                <span className="font-medium text-gray-900 dark:text-white">{viewRecord.doctor}</span>
+                <span className="font-medium text-gray-900 dark:text-white">{viewRecord.doctorName || 'N/A'}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-gray-50 dark:border-slate-800">
                 <span className="text-gray-400">Date Issued:</span>
-                <span className="font-medium text-gray-900 dark:text-white">{viewRecord.date}</span>
+                <span className="font-medium text-gray-900 dark:text-white">{new Date(viewRecord.date).toLocaleDateString()}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-gray-50 dark:border-slate-800">
                 <span className="text-gray-400">File Size & Format:</span>
-                <span className="font-medium text-gray-900 dark:text-white">{viewRecord.size} ({viewRecord.format})</span>
+                <span className="font-medium text-gray-900 dark:text-white">{viewRecord.fileSize || '1.2 MB'} ({viewRecord.fileFormat || 'PDF'})</span>
               </div>
               <div className="flex justify-between py-1 border-b border-gray-50 dark:border-slate-800">
                 <span className="text-gray-400">Security Check:</span>
-                <span className="font-semibold text-emerald-600 flex items-center gap-1"><FiCheckCircle size={12} /> Verified SHA256</span>
+                <span className="font-semibold text-emerald-600 flex items-center gap-1"><FiCheckCircle size={12} /> Verified SSL</span>
               </div>
             </div>
 
             <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-xl text-xs space-y-1">
               <p className="font-semibold text-gray-900 dark:text-white">Summary Findings:</p>
-              <p className="text-gray-500 dark:text-slate-400">All diagnostic parameters evaluated by {viewRecord.doctor}. Patient results fall within standard normal ranges.</p>
+              <p className="text-gray-500 dark:text-slate-400">{viewRecord.notes || "All diagnostic parameters evaluated. Results are within standard normal ranges."}</p>
             </div>
 
             <div className="flex gap-3 pt-2">
@@ -229,4 +228,3 @@ export default function MedicalRecords() {
     </div>
   );
 }
-

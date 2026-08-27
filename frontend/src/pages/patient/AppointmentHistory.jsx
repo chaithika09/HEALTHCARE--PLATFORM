@@ -5,7 +5,7 @@ import {
   FiCalendar, FiClock, FiVideo, FiUser, FiSearch,
   FiCheckCircle, FiXCircle, FiAlertCircle, FiRefreshCw, FiEye, FiX, FiMapPin, FiMessageSquare
 } from "react-icons/fi";
-import { appointmentAPI } from "../../services/api";
+import { appointmentAPI, chatAPI } from "../../services/api";
 import { useAuthStore } from "../../store/authStore";
 import toast from "react-hot-toast";
 
@@ -115,18 +115,9 @@ export default function AppointmentHistory() {
   const handleMessageDoctor = async (doctorUserId) => {
     if (!doctorUserId) { toast("Doctor info not available", { icon: "⚠️" }); return; }
     try {
-      const token = JSON.parse(localStorage.getItem("healthcare-auth"))?.state?.token;
-      const res = await fetch(
-        `${process.env.REACT_APP_API_URL || "http://localhost:5000/api/v1"}/chat/conversations`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ participantId: doctorUserId }),
-        }
-      );
-      const data = await res.json();
-      if (data.success) {
-        window.location.href = `/chat/${data.data.conversation._id}`;
+      const res = await chatAPI.createOrGet({ participantId: doctorUserId });
+      if (res.data.success) {
+        window.location.href = `/chat/${res.data.data.conversation._id}`;
       } else {
         toast.error("Could not open chat");
       }

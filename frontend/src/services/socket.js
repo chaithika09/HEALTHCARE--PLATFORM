@@ -5,9 +5,17 @@
  */
 import { io } from "socket.io-client";
 
-const SOCKET_URL =
-  (process.env.REACT_APP_API_URL || "http://localhost:5000/api/v1")
-    .replace("/api/v1", "");
+const getSocketUrl = () => {
+  if (process.env.REACT_APP_API_URL) return process.env.REACT_APP_API_URL.replace("/api/v1", "");
+
+  const host = window.location.hostname;
+  if (/^(?:\d{1,3}\.){3}\d{1,3}$/.test(host)) {
+    return `http://${host}:5000`;
+  }
+  return "http://localhost:5000";
+};
+
+const SOCKET_URL = getSocketUrl();
 
 let _socket = null;
 

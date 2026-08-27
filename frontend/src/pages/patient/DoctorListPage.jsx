@@ -39,7 +39,22 @@ export default function DoctorListPage() {
     fetchDoctors();
   }, []);
 
-  const filtered = doctors
+  const demoDoctors = [
+    { id: 1, name: "Dr. Sarah Johnson", specialty: "Cardiologist", rating: 4.9, reviews: 312, experience: 12, location: "New York, NY", fee: 150, available: true, avatar: "SJ", tags: ["Video", "In-person"] },
+    { id: 2, name: "Dr. Michael Chen", specialty: "Neurologist", rating: 4.8, reviews: 245, experience: 15, location: "Los Angeles, CA", fee: 180, available: true, avatar: "MC", tags: ["Video"] },
+    { id: 3, name: "Dr. Emily Davis", specialty: "Dermatologist", rating: 4.7, reviews: 189, experience: 8, location: "Chicago, IL", fee: 120, available: false, avatar: "ED", tags: ["In-person"] },
+  ];
+
+  const combinedDoctors = [...doctors];
+  if (doctors.length < 2) {
+    demoDoctors.forEach(demo => {
+      if (!doctors.find(d => (d.name || d.user?.name) === demo.name)) {
+        combinedDoctors.push(demo);
+      }
+    });
+  }
+
+  const filtered = combinedDoctors
     .filter((d) => {
       const docName = d.name || d.user?.name || "";
       const specialty = d.specialty || "";

@@ -1,11 +1,24 @@
 import axios from "axios";
 import { useAuthStore } from "../store/authStore";
 
-const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api/v1";
+const getBaseUrl = () => {
+  if (process.env.REACT_APP_API_URL) return process.env.REACT_APP_API_URL;
+
+  const host = window.location.hostname;
+  // If we are accessing via IP (like on mobile), use the same IP for the backend
+  if (/^(?:\d{1,3}\.){3}\d{1,3}$/.test(host)) {
+    return `http://${host}:5000/api/v1`;
+  }
+
+  // Fallback to localhost
+  return "http://localhost:5000/api/v1";
+};
+
+const BASE_URL = getBaseUrl();
 
 const api = axios.create({
   baseURL: BASE_URL,
-  timeout: 4000,
+  timeout: 15000,
   headers: { "Content-Type": "application/json" },
 });
 
@@ -81,7 +94,7 @@ export const appointmentAPI = {
 export const recordAPI = {
   getAll:         (params) => api.get("/records", { params }),
   getById:        (id)     => api.get(`/records/${id}`),
-  upload:         (data)   => api.post("/records", data, { headers: { "Content-Type": "multipart/form-data" } }),
+  upload:         (data)   => api.post("/records", data, { headers: { "Content-Type": undefined } }),
   delete:         (id)     => api.delete(`/records/${id}`),
 };
 
@@ -122,6 +135,7 @@ export const chatAPI = {
   getConversations: ()     => api.get("/chat/conversations"),
   getMessages:    (id, params) => api.get(`/chat/conversations/${id}/messages`, { params }),
   sendMessage:    (id, data)   => api.post(`/chat/conversations/${id}/messages`, data),
+  createOrGet:    (data)       => api.post("/chat/conversations", data),
 };
 
 // ── Lab Tests ─────────────────────────────────────────────────

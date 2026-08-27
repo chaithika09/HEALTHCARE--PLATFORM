@@ -6,14 +6,15 @@ import { useAuthStore } from "../../store/authStore";
 export default function BottomNav() {
   const { user } = useAuthStore();
 
+  const role = user?.role?.toLowerCase();
   const dashPath =
-    user?.role === "doctor" ? "/doctor/dashboard" :
-    user?.role === "admin"  ? "/admin/dashboard"  : "/patient/dashboard";
+    role === "doctor" ? "/doctor/dashboard" :
+    role === "admin"  ? "/admin/dashboard"  : "/patient/dashboard";
 
   const items = [
     { to: dashPath,       icon: FiHome,         label: "Home" },
-    { to: user?.role === "doctor" ? "/doctor/appointments" : "/doctors",
-                          icon: FiCalendar,     label: user?.role === "doctor" ? "Schedule" : "Doctors" },
+    { to: role === "doctor" ? "/doctor/appointments" : "/doctors",
+                          icon: FiCalendar,     label: role === "doctor" ? "Schedule" : "Doctors" },
     { to: "/chat",        icon: FiMessageSquare,label: "Chat" },
     { to: "/notifications",icon: FiBell,        label: "Alerts" },
     { to: "/profile",     icon: FiUser,         label: "Profile" },

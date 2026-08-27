@@ -141,9 +141,9 @@ app.use(errorHandler);
 
 // ── Start Server ──────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
+server.listen(PORT, "0.0.0.0", () => {
   logger.info(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV || "development"} mode`);
-  logger.info(`📡 API available at http://localhost:${PORT}/api/v1`);
+  logger.info(`📡 API available at http://0.0.0.0:${PORT}/api/v1`);
 });
 
 // ── Graceful Shutdown ─────────────────────────────────────────

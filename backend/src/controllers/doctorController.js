@@ -152,6 +152,15 @@ exports.updateProfile = async (req, res, next) => {
 
     if (!doctor) return res.status(404).json({ success: false, message: "Doctor profile not found" });
 
+    // Update user name/phone if provided
+    if (req.body.name || req.body.phone) {
+      await User.findByIdAndUpdate(req.user._id, {
+        $set: { name: req.body.name, phone: req.body.phone },
+      });
+      // Refresh user population
+      await doctor.populate("user", "name email avatar phone");
+    }
+
     res.json({ success: true, message: "Profile updated", data: { doctor } });
   } catch (error) {
     next(error);

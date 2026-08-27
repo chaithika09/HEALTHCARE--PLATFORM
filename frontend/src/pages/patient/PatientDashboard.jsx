@@ -10,7 +10,7 @@ import {
   FiArrowRight, FiClock, FiCheckCircle, FiUser, FiVideo
 } from "react-icons/fi";
 import { useAuthStore } from "../../store/authStore";
-import { appointmentAPI, recordAPI, prescriptionAPI } from "../../services/api";
+import { appointmentAPI, recordAPI, prescriptionAPI, patientAPI } from "../../services/api";
 
 const healthData = [
   { month: "Jan", bp: 120, sugar: 95, weight: 72 },
@@ -44,13 +44,18 @@ export default function PatientDashboard() {
   const [stats, setStats] = useState({ records: 0, prescriptions: 0, labTests: 0 });
   const [loading, setLoading] = useState(true);
 
+  // Use the name from the user object, or fallback to 'Patient'
+  const userName = user?.name || "Patient";
+  const firstName = userName.split(" ")[0];
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [aptRes, recRes, preRes] = await Promise.allSettled([
+        const [aptRes, recRes, preRes, dashRes] = await Promise.allSettled([
           appointmentAPI.getAll({ limit: 5 }),
           recordAPI.getAll(),
-          prescriptionAPI.getAll()
+          prescriptionAPI.getAll(),
+          patientAPI.getDashboard()
         ]);
 
         if (aptRes.status === 'fulfilled') setAppointments(aptRes.value.data.data.appointments || []);
@@ -60,11 +65,16 @@ export default function PatientDashboard() {
         if (recRes.status === 'fulfilled') recCount = recRes.value.data.data.records?.length || 0;
         if (preRes.status === 'fulfilled') preCount = preRes.value.data.data.prescriptions?.length || 0;
 
-        setStats({
-          records: recCount,
-          prescriptions: preCount,
-          labTests: 0
-        });
+        if (dashRes.status === 'fulfilled') {
+          const dashData = dashRes.value.data.data.stats;
+          setStats({
+            records: dashData.totalRecords || recCount,
+            prescriptions: dashData.activePrescriptions || preCount,
+            labTests: 0
+          });
+        } else {
+          setStats({ records: recCount, prescriptions: preCount, labTests: 0 });
+        }
       } catch (err) {
         console.error("Failed to fetch dashboard data", err);
       } finally {
@@ -96,10 +106,10 @@ export default function PatientDashboard() {
       {/* Header */}
       <motion.div variants={fadeUp} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-gray-900">
-            Welcome back, {user?.name?.split(" ")[0] || "Patient"} 👋
+          <h1 className="text-2xl font-heading font-bold text-gray-900 dark:text-white">
+            Welcome back, {firstName} 👋
           </h1>
-          <p className="text-gray-500 text-sm mt-1">Here's your personal health dashboard</p>
+          <p className="text-gray-500 dark:text-slate-400 text-sm mt-1">Here's your personal health dashboard</p>
         </div>
         <Link to="/doctors" className="btn-primary gap-2 self-start sm:self-auto">
           <FiCalendar size={16} /> Book Appointment

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FiCalendar, FiVideo, FiUser, FiClock, FiSearch, FiMessageSquare } from "react-icons/fi";
-import { doctorAPI, appointmentAPI } from "../../services/api";
+import { doctorAPI, appointmentAPI, chatAPI } from "../../services/api";
 import toast from "react-hot-toast";
 
 const statusColors = {
@@ -44,6 +44,9 @@ export default function DoctorAppointments() {
         confirmationId: a.confirmationId,
       }));
 
+      // Sort by date and time
+      mapped.sort((a, b) => new Date(a.date) - new Date(b.date));
+
       setAppointments(mapped);
     } catch (error) {
       console.error("Failed to fetch appointments:", error);
@@ -76,18 +79,9 @@ export default function DoctorAppointments() {
 
   const handleMessagePatient = async (patientUserId) => {
     try {
-      const token = JSON.parse(localStorage.getItem("healthcare-auth"))?.state?.token;
-      const res = await fetch(
-        `${process.env.REACT_APP_API_URL || "http://localhost:5000/api/v1"}/chat/conversations`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ participantId: patientUserId }),
-        }
-      );
-      const data = await res.json();
-      if (data.success) {
-        navigate(`/chat/${data.data.conversation._id}`);
+      const res = await chatAPI.createOrGet({ participantId: patientUserId });
+      if (res.data.success) {
+        navigate(`/chat/${res.data.data.conversation._id}`);
       } else {
         toast.error("Could not open chat");
       }

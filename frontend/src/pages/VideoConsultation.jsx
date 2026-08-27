@@ -137,8 +137,8 @@ export default function VideoConsultation() {
         if (isDoctor) {
           setOtherUser(apt.patient);
         } else {
-          // patient sees doctor
-          setOtherUser(apt.doctor?.user || { name: apt.doctor?.specialty || "Doctor" });
+          // Patient sees doctor (populated User object from Appointment model)
+          setOtherUser(apt.doctor);
         }
       } catch (err) {
         console.error("Failed to fetch appointment:", err);
@@ -167,52 +167,95 @@ export default function VideoConsultation() {
       if (isDoctor) {
         setCallStatus("ringing");
 
+        console.log(`[VideoCall] Initiating call to: ${otherUserId}`);
         socket.emit("video:call-request", {
           targetUserId: otherUserId,
           appointmentId,
           callerName: user?.name || "Doctor",
         });
 
-        socket.on("video:call-accepted", async () => {
-          toast.success("Call accepted!");
+      socket.on("video:call-accepted", async () => {
+        if (peerRef.current || callStatus === "active") {
+          console.log("[WebRTC] Call already active or accepted. Ignoring duplicate accepted event.");
+          return;
+        }
+
+        toast.success("Call accepted!");
+        setCallStatus("active");
+        startTimer();
+
+        try {
           const pc = createPeer(stream, otherUserId, true);
-
-          const offer = await pc.createOffer();
+          const offer = await pc.createOffer({
+            offerToReceiveAudio: true,
+            offerToReceiveVideo: true
+          });
           await pc.setLocalDescription(offer);
-
           socket.emit("video:offer", { targetUserId: otherUserId, offer });
-          setCallStatus("active");
-          startTimer();
-        });
+          console.log("[WebRTC] Offer sent to target");
+        } catch (err) {
+          console.error("[WebRTC] Error creating offer:", err);
+          toast.error("Failed to start video connection");
+        }
+      });
 
         socket.on("video:call-rejected", () => {
           toast("Call was declined", { icon: "❌" });
           setCallStatus("ended");
           setTimeout(() => navigate(-1), 2000);
         });
+
+        socket.on("video:target-offline", () => {
+          toast("Patient is currently offline", { icon: "📵" });
+          setCallStatus("ended");
+          setTimeout(() => navigate(-1), 3000);
+        });
       } else {
         // ── Callee (patient receives) ──────────────────────────
         setCallStatus("ringing");
         toast.success("Joining video call...");
 
-        // Tell doctor we accepted
-        socket.emit("video:call-accepted", { callerId: otherUserId });
-        setCallStatus("active");
-        startTimer();
+        // Note: Modal already emitted call-accepted.
+        // We just wait for the doctor's offer here.
       }
 
       // ── WebRTC signaling ──────────────────────────────────
       socket.on("video:offer", async ({ offer, from }) => {
-        const pc = createPeer(stream, from, false);
-        await pc.setRemoteDescription(new RTCSessionDescription(offer));
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        socket.emit("video:answer", { targetUserId: from, answer });
+        if (peerRef.current) {
+          console.warn("[WebRTC] Offer received but peer already exists. Ignoring.");
+          return;
+        }
+
+        try {
+          const pc = createPeer(stream, from, false);
+          await pc.setRemoteDescription(new RTCSessionDescription(offer));
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          socket.emit("video:answer", { targetUserId: from, answer });
+
+          if (callStatus !== "active") {
+            setCallStatus("active");
+            startTimer();
+          }
+        } catch (err) {
+          console.error("[WebRTC] Error handling offer:", err);
+        }
       });
 
       socket.on("video:answer", async ({ answer }) => {
-        if (peerRef.current) {
+        if (!peerRef.current) return;
+
+        // Safety: Only process answer if we are in 'have-local-offer' state
+        if (peerRef.current.signalingState !== "have-local-offer") {
+          console.warn(`[WebRTC] Received answer in wrong state: ${peerRef.current.signalingState}. Ignoring.`);
+          return;
+        }
+
+        try {
           await peerRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+          console.log("[WebRTC] Remote answer set successfully");
+        } catch (err) {
+          console.error("[WebRTC] Failed to set remote answer:", err);
         }
       });
 

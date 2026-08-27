@@ -35,7 +35,9 @@ const initSocket = (server) => {
   });
 
   io.on("connection", (socket) => {
-    const userId = socket.userId;
+    const userId = socket.userId?.toString();
+    if (!userId) return socket.disconnect();
+
     logger.info(`Socket connected: ${userId} (${socket.id})`);
 
     // Register user as online
@@ -73,13 +75,12 @@ const initSocket = (server) => {
         const savedMsg = conversation.messages[conversation.messages.length - 1];
 
         // Broadcast ONLY to other participants (not back to sender)
-        // This prevents the sender seeing their own message twice
         socket.to(`conv:${conversationId}`).emit("chat:message", {
           conversationId,
           message: savedMsg,
         });
 
-        // ACK back to sender only — so they can replace their temp bubble
+        // ACK back to sender only
         if (typeof callback === "function") {
           callback({ message: savedMsg });
         }
@@ -89,7 +90,6 @@ const initSocket = (server) => {
           if (participantId.toString() !== userId) {
             const recipientSocketId = onlineUsers.get(participantId.toString());
             if (!recipientSocketId) {
-              // User is offline — create notification
               Notification.create({
                 recipient: participantId,
                 sender:    userId,
@@ -118,51 +118,55 @@ const initSocket = (server) => {
     // ── Video call events ─────────────────────────────────────
     socket.on("video:call-request", (data) => {
       const { targetUserId, appointmentId, callerName } = data;
-      const targetSocket = onlineUsers.get(targetUserId);
-      if (targetSocket) {
-        io.to(targetSocket).emit("video:incoming-call", {
+      const targetIdStr = targetUserId?.toString();
+      const isTargetOnline = onlineUsers.has(targetIdStr);
+
+      logger.info(`Call request from sender ${userId} to target ${targetIdStr}. Target online: ${isTargetOnline}`);
+
+      if (isTargetOnline) {
+        logger.info(`Routing call to user room: user:${targetIdStr}`);
+        // Use user room instead of single socket ID to support multiple tabs/devices
+        io.to(`user:${targetIdStr}`).emit("video:incoming-call", {
           from:          userId,
           callerName,
           appointmentId,
         });
+      } else {
+        logger.warn(`Call target ${targetIdStr} is offline.`);
+        socket.emit("video:target-offline", { targetUserId: targetIdStr });
       }
     });
 
     socket.on("video:call-accepted", (data) => {
-      const callerSocket = onlineUsers.get(data.callerId);
-      if (callerSocket) {
-        io.to(callerSocket).emit("video:call-accepted", { by: userId });
-      }
+      const callerIdStr = data.callerId?.toString();
+      logger.info(`Call accepted by ${userId} for caller ${callerIdStr}`);
+      io.to(`user:${callerIdStr}`).emit("video:call-accepted", { by: userId });
     });
 
     socket.on("video:call-rejected", (data) => {
-      const callerSocket = onlineUsers.get(data.callerId);
-      if (callerSocket) {
-        io.to(callerSocket).emit("video:call-rejected", { by: userId });
-      }
+      const callerIdStr = data.callerId?.toString();
+      io.to(`user:${callerIdStr}`).emit("video:call-rejected", { by: userId });
     });
 
     socket.on("video:call-ended", (data) => {
-      const otherSocket = onlineUsers.get(data.targetUserId);
-      if (otherSocket) {
-        io.to(otherSocket).emit("video:call-ended", { by: userId });
-      }
+      const targetIdStr = data.targetUserId?.toString();
+      io.to(`user:${targetIdStr}`).emit("video:call-ended", { by: userId });
     });
 
-    // WebRTC signaling
+    // WebRTC signaling (Target specific user rooms)
     socket.on("video:offer", (data) => {
-      const targetSocket = onlineUsers.get(data.targetUserId);
-      if (targetSocket) io.to(targetSocket).emit("video:offer", { offer: data.offer, from: userId });
+      const targetIdStr = data.targetUserId?.toString();
+      io.to(`user:${targetIdStr}`).emit("video:offer", { offer: data.offer, from: userId });
     });
 
     socket.on("video:answer", (data) => {
-      const targetSocket = onlineUsers.get(data.targetUserId);
-      if (targetSocket) io.to(targetSocket).emit("video:answer", { answer: data.answer, from: userId });
+      const targetIdStr = data.targetUserId?.toString();
+      io.to(`user:${targetIdStr}`).emit("video:answer", { answer: data.answer, from: userId });
     });
 
     socket.on("video:ice-candidate", (data) => {
-      const targetSocket = onlineUsers.get(data.targetUserId);
-      if (targetSocket) io.to(targetSocket).emit("video:ice-candidate", { candidate: data.candidate, from: userId });
+      const targetIdStr = data.targetUserId?.toString();
+      io.to(`user:${targetIdStr}`).emit("video:ice-candidate", { candidate: data.candidate, from: userId });
     });
 
     // ── Notifications ─────────────────────────────────────────

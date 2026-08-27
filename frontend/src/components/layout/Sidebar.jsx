@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,8 +13,9 @@ import { useUIStore } from "../../store/uiStore";
 import { LogoIcon } from "../common/Logo";
 import toast from "react-hot-toast";
 
+// ── Patient Navigation ──
 const patientNav = [
-  { to: "/patient/dashboard", icon: FiHome,        label: "Dashboard" },
+  { to: "/patient/dashboard", icon: FiHome,        label: "Home" },
   { to: "/doctors",           icon: FiUsers,        label: "Find Doctors" },
   { to: "/medical-records",   icon: FiFileText,     label: "Medical Records" },
   { to: "/prescriptions",     icon: FiClipboard,    label: "Prescriptions" },
@@ -22,14 +23,15 @@ const patientNav = [
   { to: "/upload-reports",    icon: FiUpload,       label: "Upload Reports" },
   { to: "/medicine-reminder", icon: FiHeart,        label: "Medicine Reminder" },
   { to: "/appointments",       icon: FiCalendar,     label: "My Appointments" },
-  { to: "/emergency",         icon: FiAlertCircle,  label: "Emergency" },
+  { to: "/emergency",         icon: FiAlertCircle,  label: "Emergency Support" },
   { to: "/chat",              icon: FiMessageSquare,label: "Messages" },
   { to: "/notifications",     icon: FiBell,         label: "Notifications" },
   { to: "/articles",          icon: FiBook,         label: "Health Articles" },
 ];
 
+// ── Doctor Navigation ──
 const doctorNav = [
-  { to: "/doctor/dashboard",     icon: FiHome,         label: "Dashboard" },
+  { to: "/doctor/dashboard",     icon: FiHome,         label: "Doctor Portal" },
   { to: "/doctor/appointments",  icon: FiCalendar,     label: "Appointments" },
   { to: "/doctor/profile",       icon: FiUser,         label: "My Profile" },
   { to: "/doctor/patients",      icon: FiUsers,        label: "My Patients" },
@@ -37,8 +39,9 @@ const doctorNav = [
   { to: "/notifications",        icon: FiBell,         label: "Notifications" },
 ];
 
+// ── Admin Navigation ──
 const adminNav = [
-  { to: "/admin/dashboard",      icon: FiHome,        label: "Dashboard" },
+  { to: "/admin/dashboard",      icon: FiHome,        label: "Admin Dashboard" },
   { to: "/admin/users",          icon: FiUsers,       label: "User Management" },
   { to: "/admin/verify-doctors", icon: FiShield,      label: "Doctor Verification" },
   { to: "/admin/analytics",      icon: FiBarChart2,   label: "Analytics" },
@@ -58,9 +61,32 @@ export default function Sidebar() {
   const { sidebarOpen, setSidebarOpen, toggleSidebar } = useUIStore();
   const navigate = useNavigate();
 
-  const navItems =
-    user?.role === "doctor" ? doctorNav :
-    user?.role === "admin"  ? adminNav  : patientNav;
+  // Normalize role to lowercase for strict comparison
+  const role = (user?.role || "").trim().toLowerCase();
+
+  // Explicitly select the correct navigation array
+  const navItems = useMemo(() => {
+    let items = [];
+
+    // If role is doctor, strictly use doctorNav which has NO extras
+    if (role === "doctor") {
+      items = [...doctorNav];
+    } else if (role === "admin") {
+      items = [...adminNav];
+    } else {
+      items = [...patientNav];
+    }
+
+    // Force remove any remaining unwanted items
+    if (role !== "patient") {
+      return items.filter(item =>
+        item.to !== "/unwanted-path" &&
+        item.label !== "Unwanted Label"
+      );
+    }
+
+    return items;
+  }, [role]);
 
   const handleLogout = () => {
     logout();
@@ -76,7 +102,6 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile overlay */}
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div
@@ -107,9 +132,12 @@ export default function Sidebar() {
                 className="flex items-center gap-2.5"
               >
                 <LogoIcon size={32} />
-                <span className="font-heading font-bold text-sm text-primary-700 whitespace-nowrap">
-                  SmartHealth
-                </span>
+                <div className="flex flex-col">
+                  <span className="font-heading font-bold text-sm text-primary-700 whitespace-nowrap">
+                    SmartHealth-FINAL
+                  </span>
+                  <span className="text-[10px] text-green-600 font-bold">STABLE_BUILD_NO_AI</span>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -121,7 +149,7 @@ export default function Sidebar() {
           </button>
         </div>
 
-        {/* User info */}
+        {/* User Info Section */}
         <AnimatePresence>
           {sidebarOpen && (
             <motion.div
@@ -137,8 +165,8 @@ export default function Sidebar() {
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-gray-900 truncate">{user?.name || "User"}</p>
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    user?.role === "doctor" ? "bg-secondary-100 text-secondary-700" :
-                    user?.role === "admin"  ? "bg-purple-100 text-purple-700" :
+                    role === "doctor" ? "bg-secondary-100 text-secondary-700" :
+                    role === "admin"  ? "bg-purple-100 text-purple-700" :
                     "bg-primary-100 text-primary-700"
                   }`}>
                     {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || "Patient"}
@@ -149,7 +177,7 @@ export default function Sidebar() {
           )}
         </AnimatePresence>
 
-        {/* Navigation */}
+        {/* Main Navigation List */}
         <nav className="flex-1 overflow-y-auto py-4 px-2 scrollbar-hide">
           <div className="space-y-1">
             {navItems.map((item) => (
@@ -160,7 +188,7 @@ export default function Sidebar() {
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${
                     isActive
-                      ? "bg-primary-50 text-primary-600"
+                      ? "bg-primary-50 text-primary-600 font-bold"
                       : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                   }`
                 }
@@ -184,7 +212,7 @@ export default function Sidebar() {
           </div>
         </nav>
 
-        {/* Bottom nav */}
+        {/* Bottom Menu Items */}
         <div className="border-t border-gray-100 py-4 px-2 space-y-1">
           {bottomNav.map((item) => (
             <NavLink

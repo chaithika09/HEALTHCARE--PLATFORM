@@ -59,6 +59,7 @@ const EditProfile       = lazy(() => import("./pages/EditProfile"));
 const SettingsPage      = lazy(() => import("./pages/SettingsPage"));
 const HealthArticles    = lazy(() => import("./pages/HealthArticles"));
 const ArticleDetail     = lazy(() => import("./pages/ArticleDetail"));
+
 const FeedbackRatings   = lazy(() => import("./pages/FeedbackRatings"));
 const ContactUs         = lazy(() => import("./pages/ContactUs"));
 const AboutUs           = lazy(() => import("./pages/AboutUs"));
@@ -71,6 +72,13 @@ const NotFoundPage      = lazy(() => import("./pages/NotFoundPage"));
 export default function App() {
   const { user, isAuthenticated, token } = useAuthStore();
   const { darkMode } = useUIStore();
+
+  // ── FORCE REDIRECT AI ASSISTANT (Absolute Block) ──
+  useEffect(() => {
+    if (window.location.pathname.includes("ai-assistant")) {
+      window.location.href = "/";
+    }
+  }, []);
 
   // ── Global socket: join all chat rooms + show message toasts ──
   useEffect(() => {
@@ -130,8 +138,9 @@ export default function App() {
 
   const getDashboardPath = () => {
     if (!user) return "/login";
-    if (user.role === "doctor") return "/doctor/dashboard";
-    if (user.role === "admin") return "/admin/dashboard";
+    const role = user.role?.toLowerCase();
+    if (role === "doctor") return "/doctor/dashboard";
+    if (role === "admin") return "/admin/dashboard";
     return "/patient/dashboard";
   };
 
@@ -195,7 +204,8 @@ export default function App() {
             <Route path="/chat"                 element={<ChatPage />} />
             <Route path="/chat/:id"             element={<ChatPage />} />
             <Route path="/notifications"        element={<NotificationsPage />} />
-            <Route path="/profile"              element={<UserProfile />} />
+
+
             <Route path="/profile/edit"         element={<EditProfile />} />
             <Route path="/settings"             element={<SettingsPage />} />
             <Route path="/articles"             element={<HealthArticles />} />

@@ -40,8 +40,8 @@ export default function LoginPage() {
 
   const onSubmit = async (data) => {
     setLoading(true);
-    let emailInput = (data.email || "").trim();
-    let passwordInput = data.password || "Demo@1234";
+    let emailInput = (data.email || "").trim().toLowerCase();
+    let passwordInput = (data.password || "").trim();
 
     // Auto-fix partial email entries like "doctor", "admin", "patient"
     if (!emailInput.includes("@")) {
@@ -50,12 +50,26 @@ export default function LoginPage() {
 
     try {
       const res = await authAPI.login({ email: emailInput, password: passwordInput });
+      if (!res.data?.data) {
+        throw new Error("Invalid response format: Missing data field");
+      }
       const { user, token, refreshToken } = res.data.data;
       handleLoginSuccess(user, token, refreshToken);
     } catch (err) {
-      const errorMsg = err.response?.data?.message || "Invalid email or password. Please try again.";
-      toast.error(errorMsg);
-    } finally {
+      console.error("Login Error:", err);
+      let errorMsg = "Invalid email or password. Please try again.";
+
+      if (err.code === "ERR_NETWORK") {
+        errorMsg = "Network Error: Cannot connect to the server. Please check if the backend is running.";
+      } else if (err.response?.data?.message) {
+        errorMsg = err.response.data.message;
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+
+      toast.error(errorMsg, { duration: 6000 });
+    }
+ finally {
       setLoading(false);
     }
   };

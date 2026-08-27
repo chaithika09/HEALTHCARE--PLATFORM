@@ -16,6 +16,8 @@ import LoginScreen from './src/screens/auth/LoginScreen';
 import RegisterScreen from './src/screens/auth/RegisterScreen';
 import OTPVerifyScreen from './src/screens/auth/OTPVerifyScreen';
 
+import IncomingCallModal from './src/components/IncomingCallModal';
+
 import PatientDashboard from './src/screens/patient/PatientDashboard';
 import AppointmentsScreen from './src/screens/patient/AppointmentsScreen';
 import BookAppointmentScreen from './src/screens/patient/BookAppointmentScreen';
@@ -87,6 +89,7 @@ export default function App() {
     <SafeAreaProvider>
       <StatusBar style="auto" />
       <NavigationContainer>
+        <IncomingCallModal />
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           {!isAuthenticated ? (
             <Stack.Screen name="Auth" component={AuthStack} />

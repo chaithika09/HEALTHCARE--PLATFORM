@@ -8,7 +8,7 @@ router.use(authenticate);
 
 router.get("/",       recordController.getAll);
 router.get("/:id",    recordController.getById);
-router.post("/",      upload.array("files", 5), recordController.upload);
+router.post("/",      upload.any(), recordController.upload);
 router.delete("/:id", recordController.delete);
 
 module.exports = router;

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiPhone, FiPhoneOff } from "react-icons/fi";
@@ -8,7 +8,7 @@ import { useAuthStore } from "../store/authStore";
 export default function IncomingCallModal() {
   const navigate = useNavigate();
   const { isAuthenticated, token } = useAuthStore();
-  const [call, setCall] = React.useState(null);
+  const [call, setCall] = useState(null);
   const timeoutRef = useRef(null);
 
   useEffect(() => {
@@ -16,19 +16,24 @@ export default function IncomingCallModal() {
 
     const socket = getSocket(token);
 
-    socket.on("video:incoming-call", (data) => {
+    const handleIncomingCall = (data) => {
+      console.log("Incoming call event received in Modal:", data);
       setCall(data);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       timeoutRef.current = setTimeout(() => setCall(null), 30000);
-    });
+    };
 
-    socket.on("video:call-ended", () => {
+    const handleCallEnded = () => {
       setCall(null);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    });
+    };
+
+    socket.on("video:incoming-call", handleIncomingCall);
+    socket.on("video:call-ended", handleCallEnded);
 
     return () => {
-      socket.off("video:incoming-call");
-      socket.off("video:call-ended");
+      socket.off("video:incoming-call", handleIncomingCall);
+      socket.off("video:call-ended", handleCallEnded);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, [isAuthenticated, token]);
