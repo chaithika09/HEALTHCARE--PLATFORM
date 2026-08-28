@@ -175,14 +175,17 @@ export default function VideoConsultation() {
         });
 
       socket.on("video:call-accepted", async () => {
-        if (peerRef.current || callStatus === "active") {
+        if (peerRef.current) {
           console.log("[WebRTC] Call already active or accepted. Ignoring duplicate accepted event.");
           return;
         }
 
-        toast.success("Call accepted!");
+        toast.success("Call accepted! Connecting...");
         setCallStatus("active");
         startTimer();
+
+        // Small delay to ensure patient's page is fully loaded
+        await new Promise(r => setTimeout(r, 500));
 
         try {
           const pc = createPeer(stream, otherUserId, true);
@@ -192,7 +195,7 @@ export default function VideoConsultation() {
           });
           await pc.setLocalDescription(offer);
           socket.emit("video:offer", { targetUserId: otherUserId, offer });
-          console.log("[WebRTC] Offer sent to target");
+          console.log("[WebRTC] Offer sent to target:", otherUserId);
         } catch (err) {
           console.error("[WebRTC] Error creating offer:", err);
           toast.error("Failed to start video connection");
@@ -215,8 +218,14 @@ export default function VideoConsultation() {
         setCallStatus("ringing");
         toast.success("Joining video call...");
 
-        // Note: Modal already emitted call-accepted.
-        // We just wait for the doctor's offer here.
+        // Re-emit call-accepted in case doctor missed it from the modal
+        // (handles timing issues when navigating to this page)
+        const callerId = isDoctor
+          ? appointment.patient?._id
+          : appointment.doctor?.user?._id || appointment.doctor?._id;
+
+        console.log(`[VideoCall] Patient re-emitting call-accepted to doctor: ${callerId}`);
+        socket.emit("video:call-accepted", { callerId });
       }
 
       // ── WebRTC signaling ──────────────────────────────────
