@@ -27,6 +27,7 @@ const labRoutes          = require("./src/routes/labRoutes");
 const articleRoutes      = require("./src/routes/articleRoutes");
 const feedbackRoutes     = require("./src/routes/feedbackRoutes");
 const adminRoutes        = require("./src/routes/adminRoutes");
+const seedRoutes         = require("./src/routes/seedRoutes");
 
 const app    = express();
 const server = http.createServer(app);
@@ -118,6 +119,7 @@ app.use(`${API}/lab-tests`,     labRoutes);
 app.use(`${API}/articles`,      articleRoutes);
 app.use(`${API}/feedback`,      feedbackRoutes);
 app.use(`${API}/admin`,         adminRoutes);
+app.use(`${API}/seed`,          seedRoutes);
 
 // ── 404 Handler ───────────────────────────────────────────────
 // If a frontend build exists, serve it for all non-API routes so
