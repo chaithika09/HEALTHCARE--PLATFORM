@@ -1,14 +1,19 @@
 {
-  "version": 2,
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/build",
-  "env": {
-    "REACT_APP_API_URL": "https://mediq-backend-9ttq.onrender.com/api/v1",
-    "REACT_APP_SOCKET_URL": "https://mediq-backend-9ttq.onrender.com",
-    "REACT_APP_NAME": "MediQ - Smart Healthcare",
-    "REACT_APP_VERSION": "2.0.0"
-  },
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
+  "services": {
+    "frontend": {
+      "root": "frontend",
+      "framework": "create-react-app",
+      "buildCommand": "npm run build",
+      "outputDirectory": "build",
+      "routes": [
+        { "src": "/(.*)", "dest": "/index.html" }
+      ],
+      "env": {
+        "REACT_APP_API_URL": "https://mediq-backend-9ttq.onrender.com/api/v1",
+        "REACT_APP_SOCKET_URL": "https://mediq-backend-9ttq.onrender.com",
+        "REACT_APP_NAME": "MediQ - Smart Healthcare",
+        "REACT_APP_VERSION": "2.0.0"
+      }
+    }
+  }
 }
