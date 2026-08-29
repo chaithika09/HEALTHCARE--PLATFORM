@@ -6,12 +6,13 @@
 import { io } from "socket.io-client";
 
 const getSocketUrl = () => {
+  // Use explicit socket URL if set
+  if (process.env.REACT_APP_SOCKET_URL) return process.env.REACT_APP_SOCKET_URL;
+  // Fallback: derive from API URL
   if (process.env.REACT_APP_API_URL) return process.env.REACT_APP_API_URL.replace("/api/v1", "");
-
+  // Local dev fallback
   const host = window.location.hostname;
-  if (/^(?:\d{1,3}\.){3}\d{1,3}$/.test(host)) {
-    return `http://${host}:5000`;
-  }
+  if (/^(?:\d{1,3}\.){3}\d{1,3}$/.test(host)) return `http://${host}:5000`;
   return "http://localhost:5000";
 };
 
@@ -37,7 +38,7 @@ export const getSocket = (token) => {
   // First time — create the socket
   _socket = io(SOCKET_URL, {
     auth: { token },
-    transports: ["websocket"],
+    transports: ["websocket", "polling"],
     reconnection: true,
     reconnectionAttempts: 10,
     reconnectionDelay: 1000,
