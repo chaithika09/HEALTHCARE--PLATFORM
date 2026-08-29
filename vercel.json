@@ -1,6 +1,13 @@
 {
   "buildCommand": "cd frontend && CI=false npm install && CI=false npm run build",
   "outputDirectory": "frontend/build",
+  "env": {
+    "REACT_APP_API_URL": "https://healthcare-platform-gi6v.onrender.com/api/v1",
+    "REACT_APP_SOCKET_URL": "https://healthcare-platform-gi6v.onrender.com",
+    "REACT_APP_NAME": "MediQ - Smart Healthcare",
+    "REACT_APP_VERSION": "2.0.0",
+    "CI": "false"
+  },
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
