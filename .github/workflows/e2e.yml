@@ -1,8 +1,8 @@
 name: e2e.yml
 
-on:
+o:
   push:
-    branches: [main, master]
+    brches: [main, master]
   pull_request:
     branches: [main, master]
   workflow_dispatch:
