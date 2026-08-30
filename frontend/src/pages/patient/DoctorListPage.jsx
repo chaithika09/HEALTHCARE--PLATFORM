@@ -67,7 +67,9 @@ export default function DoctorListPage() {
       const matchSearch = docName.toLowerCase().includes(search.toLowerCase()) ||
         specialty.toLowerCase().includes(search.toLowerCase());
 
-      const matchSpec = selectedSpec === "All" || specialty === selectedSpec;
+      const matchSpec = selectedSpec === "All" || 
+        specialty.toLowerCase().includes(selectedSpec.toLowerCase()) ||
+        selectedSpec.toLowerCase().includes(specialty.toLowerCase());
 
       const matchAvail = !availableOnly || d.available !== false;
 

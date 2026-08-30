@@ -119,22 +119,29 @@ const initSocket = (server) => {
     socket.on("video:call-request", (data) => {
       const { targetUserId, appointmentId, callerName } = data;
       const targetIdStr = targetUserId?.toString();
-      const isTargetOnline = onlineUsers.has(targetIdStr);
 
-      logger.info(`Call request from sender ${userId} to target ${targetIdStr}. Target online: ${isTargetOnline}`);
+      logger.info(`Call request from ${userId} to ${targetIdStr}`);
 
-      if (isTargetOnline) {
-        logger.info(`Routing call to user room: user:${targetIdStr}`);
-        // Use user room instead of single socket ID to support multiple tabs/devices
-        io.to(`user:${targetIdStr}`).emit("video:incoming-call", {
-          from:          userId,
-          callerName,
-          appointmentId,
-        });
-      } else {
-        logger.warn(`Call target ${targetIdStr} is offline.`);
-        socket.emit("video:target-offline", { targetUserId: targetIdStr });
-      }
+      // Try to deliver immediately, then retry 3 times over 9 seconds
+      const tryDeliver = (attempt = 0) => {
+        const isTargetOnline = onlineUsers.has(targetIdStr);
+        logger.info(`Call delivery attempt ${attempt + 1}: Target ${targetIdStr} online: ${isTargetOnline}`);
+
+        if (isTargetOnline) {
+          io.to(`user:${targetIdStr}`).emit("video:incoming-call", {
+            from: userId, callerName, appointmentId,
+          });
+          logger.info(`Call delivered to user:${targetIdStr}`);
+        } else if (attempt < 3) {
+          // Retry after 3 seconds
+          setTimeout(() => tryDeliver(attempt + 1), 3000);
+        } else {
+          logger.warn(`Call target ${targetIdStr} is offline after retries.`);
+          socket.emit("video:target-offline", { targetUserId: targetIdStr });
+        }
+      };
+
+      tryDeliver(0);
     });
 
     socket.on("video:call-accepted", (data) => {
