@@ -49,18 +49,26 @@ export default function MedicalRecords() {
       window.open(rec.fileUrl, '_blank');
       return;
     }
+
+    // Fix field names: model uses 'doctor' and 'reportDate'
+    const doctorName = rec.doctor || rec.doctorName || 'N/A';
+    const issueDate  = rec.reportDate || rec.date || rec.createdAt;
+    const formattedDate = issueDate && !isNaN(new Date(issueDate))
+      ? new Date(issueDate).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })
+      : new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
+
     const reportText = `
 ============================================================
  SMART HEALTHCARE PORTAL — OFFICIAL MEDICAL RECORD REPORT
 ============================================================
  Record Name   : ${rec.title}
  Record Type   : ${rec.type}
- Attending Doc : ${rec.doctorName || 'N/A'}
- Issue Date    : ${new Date(rec.date).toLocaleDateString()}
+ Attending Doc : ${doctorName}
+ Issue Date    : ${formattedDate}
  Patient Name  : ${user?.name || "Patient"}
  Record Status : Verified & Authenticated
 ============================================================
- Verified by MedIQ+ Healthcare Diagnostic Systems
+ Verified by MediQ Healthcare Platform
 ============================================================
 `;
     const blob = new Blob([reportText.trim()], { type: "text/plain;charset=utf-8" });
@@ -142,10 +150,14 @@ export default function MedicalRecords() {
 
             <div className="space-y-1.5 text-xs text-gray-500 dark:text-slate-400">
               <div className="flex items-center gap-1.5">
-                <FiUser size={11} /> {rec.doctorName || "N/A"}
+                <FiUser size={11} /> {rec.doctor || rec.doctorName || "N/A"}
               </div>
               <div className="flex items-center gap-1.5">
-                <FiCalendar size={11} /> {new Date(rec.date).toLocaleDateString()}
+                <FiCalendar size={11} /> {
+                  (rec.reportDate || rec.date || rec.createdAt) && !isNaN(new Date(rec.reportDate || rec.date || rec.createdAt))
+                    ? new Date(rec.reportDate || rec.date || rec.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+                    : new Date(rec.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+                }
               </div>
               <div className="flex items-center justify-between">
                 <span>{rec.fileSize || "1.2 MB"} · {rec.fileFormat || "PDF"}</span>
@@ -193,11 +205,15 @@ export default function MedicalRecords() {
             <div className="space-y-2 text-xs text-gray-600 dark:text-slate-300">
               <div className="flex justify-between py-1 border-b border-gray-50 dark:border-slate-800">
                 <span className="text-gray-400">Doctor / Specialist:</span>
-                <span className="font-medium text-gray-900 dark:text-white">{viewRecord.doctorName || 'N/A'}</span>
+                <span className="font-medium text-gray-900 dark:text-white">{viewRecord.doctor || viewRecord.doctorName || 'N/A'}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-gray-50 dark:border-slate-800">
                 <span className="text-gray-400">Date Issued:</span>
-                <span className="font-medium text-gray-900 dark:text-white">{new Date(viewRecord.date).toLocaleDateString()}</span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {(viewRecord.reportDate || viewRecord.date || viewRecord.createdAt) && !isNaN(new Date(viewRecord.reportDate || viewRecord.date || viewRecord.createdAt))
+                    ? new Date(viewRecord.reportDate || viewRecord.date || viewRecord.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })
+                    : new Date(viewRecord.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}
+                </span>
               </div>
               <div className="flex justify-between py-1 border-b border-gray-50 dark:border-slate-800">
                 <span className="text-gray-400">File Size & Format:</span>
