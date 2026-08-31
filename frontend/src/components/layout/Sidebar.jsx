@@ -6,8 +6,7 @@ import {
   FiUsers, FiSettings, FiBell, FiLogOut, FiActivity,
   FiShield, FiBarChart2, FiClipboard, FiHeart, FiAlertCircle,
   FiBook, FiStar, FiHelpCircle, FiChevronLeft, FiChevronRight,
-  FiUser, FiDroplet, FiUpload
-} from "react-icons/fi";
+  FiUser, FiDroplet, FiUpload} from "react-icons/fi";
 import { useAuthStore } from "../../store/authStore";
 import { useUIStore } from "../../store/uiStore";
 import { LogoIcon } from "../common/Logo";
@@ -19,7 +18,6 @@ const patientNav = [
   { to: "/doctors",           icon: FiUsers,        label: "Find Doctors" },
   { to: "/medical-records",   icon: FiFileText,     label: "Medical Records" },
   { to: "/prescriptions",     icon: FiClipboard,    label: "Prescriptions" },
-  { to: "/lab-tests",         icon: FiDroplet,      label: "Lab Tests" },
   { to: "/upload-reports",    icon: FiUpload,       label: "Upload Reports" },
   { to: "/medicine-reminder", icon: FiHeart,        label: "Medicine Reminder" },
   { to: "/appointments",       icon: FiCalendar,     label: "My Appointments" },
