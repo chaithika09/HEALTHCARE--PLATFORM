@@ -60,8 +60,12 @@ export default function ChatPage() {
     return d.toLocaleDateString([], { month: "short", day: "numeric" });
   };
 
-  const isMine = (msg) =>
-    (msg.sender?._id || msg.sender)?.toString() === user?._id?.toString();
+  const isMine = (msg) => {
+    const senderId = msg.sender?._id || msg.sender;
+    const myId = user?._id;
+    if (!senderId || !myId) return false;
+    return senderId.toString() === myId.toString();
+  };
 
   /* ─────────────────── socket (singleton) ───────────────────── */
   useEffect(() => {

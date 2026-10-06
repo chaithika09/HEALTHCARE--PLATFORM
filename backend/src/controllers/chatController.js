@@ -23,7 +23,8 @@ exports.getMessages = async (req, res, next) => {
     const { page = 1, limit = 50 } = req.query;
 
     const conversation = await Conversation.findById(id)
-      .populate("participants", "name email avatar");
+      .populate("participants", "name email avatar")
+      .populate("messages.sender", "name _id");
 
     if (!conversation) return res.status(404).json({ success: false, message: "Conversation not found" });
 
@@ -38,7 +39,8 @@ exports.getMessages = async (req, res, next) => {
 
     // Mark messages as read
     conversation.messages.forEach((msg) => {
-      if (msg.sender.toString() !== req.user._id.toString() && !msg.isRead) {
+      const senderId = msg.sender?._id?.toString() || msg.sender?.toString();
+      if (senderId !== req.user._id.toString() && !msg.isRead) {
         msg.isRead = true;
         msg.readAt = new Date();
       }
