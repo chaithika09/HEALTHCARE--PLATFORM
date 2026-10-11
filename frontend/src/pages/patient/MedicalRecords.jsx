@@ -6,7 +6,7 @@ import { useAuthStore } from "../../store/authStore";
 import { recordAPI } from "../../services/api";
 import toast from "react-hot-toast";
 
-const categories = ["all", "lab", "imaging", "prescription"];
+const categories = ["all", "lab-report", "imaging", "discharge-summary", "vaccination", "other"];
 const typeColors = {
   "lab":   "bg-blue-100 text-blue-700",
   "imaging":    "bg-purple-100 text-purple-700",
@@ -112,7 +112,7 @@ export default function MedicalRecords() {
       </div>
 
       {/* Category tabs */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         {categories.map((c) => (
           <button
             key={c}
@@ -121,9 +121,22 @@ export default function MedicalRecords() {
               category === c ? "bg-primary-500 text-white" : "bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 hover:border-primary-300"
             }`}
           >
-            {c === "all" ? "All Records" : c}
+            {c === "all" ? "All Records" :
+             c === "lab-report" ? "Lab Reports" :
+             c === "discharge-summary" ? "Discharge" :
+             c === "vaccination" ? "Vaccination" :
+             c.charAt(0).toUpperCase() + c.slice(1)}
           </button>
         ))}
+      </div>
+
+      {/* Prescriptions note */}
+      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl flex items-center gap-2 text-sm">
+        <span>💊</span>
+        <span className="text-blue-700 dark:text-blue-300">
+          Looking for prescriptions from your doctor? Go to{" "}
+          <Link to="/prescriptions" className="font-semibold underline">Prescriptions page</Link>
+        </span>
       </div>
 
       {/* Records grid */}
