@@ -156,6 +156,14 @@ export default function VideoConsultation() {
     const socket = getSocket(token);
     socketRef.current = socket;
 
+    // Join video room for this appointment so we can receive calls
+    if (socket.connected) {
+      socket.emit("video:join-room", { appointmentId });
+    }
+    socket.on("connect", () => {
+      socket.emit("video:join-room", { appointmentId });
+    });
+
     const otherUserId = isDoctor
       ? appointment.patient?._id
       : appointment.doctor?.user?._id || appointment.doctor?._id;
@@ -209,9 +217,31 @@ export default function VideoConsultation() {
         });
 
         socket.on("video:target-offline", () => {
-          toast("Patient is currently offline", { icon: "📵" });
+          // Generate a Jitsi Meet room as fallback
+          const roomId = `mediq-${appointmentId?.slice(-8) || Date.now()}`;
+          const jitsiUrl = `https://meet.jit.si/${roomId}`;
+          
+          toast(
+            (t) => (
+              <div>
+                <p className="font-semibold">Patient may be offline</p>
+                <p className="text-xs mt-1">Try video via Jitsi Meet:</p>
+                <a 
+                  href={jitsiUrl} 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="text-blue-500 underline text-xs block mt-1"
+                  onClick={() => toast.dismiss(t.id)}
+                >
+                  Join: {roomId}
+                </a>
+              </div>
+            ),
+            { duration: 10000, icon: "📹" }
+          );
+          
           setCallStatus("ended");
-          setTimeout(() => navigate(-1), 3000);
+          setTimeout(() => navigate(-1), 8000);
         });
       } else {
         // ── Callee (patient receives) ──────────────────────────

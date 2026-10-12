@@ -116,32 +116,50 @@ const initSocket = (server) => {
     });
 
     // ── Video call events ─────────────────────────────────────
+
+    // Join video room for appointment — called when user opens appointment page
+    socket.on("video:join-room", (data) => {
+      const { appointmentId } = data;
+      socket.join(`video:${appointmentId}`);
+      logger.info(`User ${userId} joined video room: video:${appointmentId}`);
+    });
+
     socket.on("video:call-request", (data) => {
       const { targetUserId, appointmentId, callerName } = data;
       const targetIdStr = targetUserId?.toString();
 
-      logger.info(`Call request from ${userId} to ${targetIdStr}`);
+      logger.info(`Call request from ${userId} to ${targetIdStr} for appt ${appointmentId}`);
 
-      // Try to deliver immediately, then retry 3 times over 9 seconds
-      const tryDeliver = (attempt = 0) => {
-        const isTargetOnline = onlineUsers.has(targetIdStr);
-        logger.info(`Call delivery attempt ${attempt + 1}: Target ${targetIdStr} online: ${isTargetOnline}`);
+      // Strategy 1: Send to user's personal room (if they're online)
+      // Strategy 2: Send to appointment video room (if they joined it)
+      // Strategy 3: Retry 3 times
 
-        if (isTargetOnline) {
-          io.to(`user:${targetIdStr}`).emit("video:incoming-call", {
-            from: userId, callerName, appointmentId,
-          });
-          logger.info(`Call delivered to user:${targetIdStr}`);
-        } else if (attempt < 3) {
-          // Retry after 3 seconds
-          setTimeout(() => tryDeliver(attempt + 1), 3000);
-        } else {
-          logger.warn(`Call target ${targetIdStr} is offline after retries.`);
-          socket.emit("video:target-offline", { targetUserId: targetIdStr });
-        }
+      const deliverCall = () => {
+        // Broadcast to both possible locations
+        io.to(`user:${targetIdStr}`).emit("video:incoming-call", {
+          from: userId, callerName, appointmentId,
+        });
+        io.to(`video:${appointmentId}`).emit("video:incoming-call", {
+          from: userId, callerName, appointmentId,
+        });
+        logger.info(`Call broadcast to user:${targetIdStr} and video:${appointmentId}`);
       };
 
-      tryDeliver(0);
+      // Deliver immediately
+      deliverCall();
+
+      // Also retry after 3 and 6 seconds in case patient joins late
+      setTimeout(deliverCall, 3000);
+      setTimeout(deliverCall, 6000);
+
+      // Notify offline only after 12 seconds if never accepted
+      setTimeout(() => {
+        const isTargetOnline = onlineUsers.has(targetIdStr);
+        if (!isTargetOnline) {
+          logger.warn(`Call target ${targetIdStr} is still offline after 12s.`);
+          socket.emit("video:target-offline", { targetUserId: targetIdStr });
+        }
+      }, 12000);
     });
 
     socket.on("video:call-accepted", (data) => {
